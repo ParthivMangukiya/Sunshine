@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--<EditTextPreference-->
+        <!--android:key="@string/pre_loc_key"-->
+        <!--android:title="@string/pre_loc_title"-->
+        <!--android:defaultValue="@string/pre_loc_def"-->
+        <!--android:inputType="text"-->
+        <!--android:imeOptions="actionSearch"-->
+        <!--android:singleLine="true"/>-->
+    <ListPreference
+        android:key="@string/pre_unit_key"
+        android:title="@string/pre_unit_title"
+        android:defaultValue="@string/pre_unit_def"
+        android:entries="@array/pre_unit_entries"
+        android:entryValues="@array/pre_unit_entryvalues"/>
+</PreferenceScreen>
