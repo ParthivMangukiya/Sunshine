@@ -8,20 +8,25 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 
 import com.parthiv.sunshine.app.data.WeatherContract;
+import com.parthiv.sunshine.app.sync.SunshineSyncAdapter;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 public class Utility {
     private static final String LOG_TAG = Utility.class.getSimpleName();
 
+    //@return this method return selected location id.
     public static String getPreferredLocationCityId(Context context) {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getString(context.getString(R.string.pref_city_id_key),context.getString(R.string.pref_city_id_def));
@@ -29,20 +34,21 @@ public class Utility {
 
     public static boolean checkLocationInDatabase(Context context)
     {
-            boolean ret=true;
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            String location = prefs.getString(context.getString(R.string.pref_city_name_key),
-                    context.getString(R.string.pref_city_name_def));
-            Cursor cursor = context.getContentResolver().query(WeatherContract.LocationEntry.CONTENT_URI,
-                    new String[]{WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING},
-                    WeatherContract.LocationEntry.COLUMN_CITY_NAME + " = ? ",
-                    new String[]{location},
-                    null);
-            if (!cursor.moveToFirst() || cursor.getCount() == 0) {
+        boolean ret=true;
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String location = prefs.getString(context.getString(R.string.pref_city_name_key),
+                context.getString(R.string.pref_city_name_def));
+        Cursor cursor = context.getContentResolver().query(WeatherContract.LocationEntry.CONTENT_URI,
+                new String[]{WeatherContract.LocationEntry.COLUMN_LOCATION_SETTING},
+                WeatherContract.LocationEntry.COLUMN_CITY_NAME + " = ? ",
+                new String[]{location},
+                null);
+        if (cursor == null || !cursor.moveToFirst() || cursor.getCount() == 0) {
                 ret = false;
-            }
+        }else{
             cursor.close();
-            return ret;
+        }
+        return ret;
     }
 
     public static void hideKeyboard(Activity activity) {
@@ -56,6 +62,7 @@ public class Utility {
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
+    //@return this method return selected location name as String.
 
     public static String getPrefLocation(Context context){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
@@ -63,14 +70,15 @@ public class Utility {
                 context.getString(R.string.pref_city_name_def));
     }
 
-
+    /* @return this method return location ,country code as String.
+     */
     public  static  String getPrefLocationWithCountryCode(Context context){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
         return prefs.getString(context.getString(R.string.pref_city_name_key),
                 context.getString(R.string.pref_city_name_def)) + "," + prefs.getString(context.getString(R.string.pref_country_code_key),context.getString(R.string.pref_country_code_def));
     }
 
-    static String formatTemperature(Context context, double temperature, boolean isMetric) {
+    public static String formatTemperature(Context context, double temperature, boolean isMetric) {
         double temp;
         if ( !isMetric ) {
             temp = 9*temperature/5+32;
@@ -115,7 +123,7 @@ public class Utility {
             return getDayName(context, dateInMillis);
         } else {
             // Otherwise, use the form "Mon Jun 3"
-            SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("EEE MMM dd");
+            SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("EEE MMM dd", Locale.getDefault());
             return shortenedDateFormat.format(dateInMillis);
         }
     }
@@ -141,16 +149,15 @@ public class Utility {
         } else if ( julianDay == currentJulianDay +1 ) {
             return context.getString(R.string.tomorrow);
         } else {
-            SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE");
+            SimpleDateFormat dayFormat = new SimpleDateFormat("EEEE",Locale.getDefault());
             return dayFormat.format(dateInMillis);
         }
     }
 
 
     public static String getFormattedMonthDay(Context context, long dateInMillis ) {
-        SimpleDateFormat monthDayFormat = new SimpleDateFormat("MMMM dd");
-        String monthDayString = monthDayFormat.format(dateInMillis);
-        return monthDayString;
+        SimpleDateFormat monthDayFormat = new SimpleDateFormat("MMMM dd",Locale.getDefault());
+        return monthDayFormat.format(dateInMillis);
     }
 
 
@@ -182,6 +189,47 @@ public class Utility {
         String direction = directionsText[Math.round(degrees / (DEGREES_TOTAL / DIR_TOTAL)) % DIR_TOTAL];
 
         return String.format(context.getString(windFormat), windSpeed, direction);
+    }
+
+    /**
+     * Helper method to provide the art urls according to the weather condition id returned
+     * by the OpenWeatherMap call.
+     *
+     * @param context Context to use for retrieving the URL format
+     * @param weatherId from OpenWeatherMap API response
+     * @return url for the corresponding weather artwork. null if no relation is found.
+     */
+    public static String getArtUrlForWeatherCondition(Context context, int weatherId) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        String formatArtUrl = prefs.getString(context.getString(R.string.pref_art_pack_key),
+                context.getString(R.string.pref_art_pack_sunshine));
+
+        // Based on weather code data found at:
+        // http://bugs.openweathermap.org/projects/api/wiki/Weather_Condition_Codes
+        if (weatherId >= 200 && weatherId <= 232) {
+            return String.format(Locale.US, formatArtUrl, "storm");
+        } else if (weatherId >= 300 && weatherId <= 321) {
+            return String.format(Locale.US, formatArtUrl, "light_rain");
+        } else if (weatherId >= 500 && weatherId <= 504) {
+            return String.format(Locale.US, formatArtUrl, "rain");
+        } else if (weatherId == 511) {
+            return String.format(Locale.US, formatArtUrl, "snow");
+        } else if (weatherId >= 520 && weatherId <= 531) {
+            return String.format(Locale.US, formatArtUrl, "rain");
+        } else if (weatherId >= 600 && weatherId <= 622) {
+            return String.format(Locale.US, formatArtUrl, "snow");
+        } else if (weatherId >= 701 && weatherId <= 761) {
+            return String.format(Locale.US, formatArtUrl, "fog");
+        } else if (weatherId == 761 || weatherId == 781) {
+            return String.format(Locale.US, formatArtUrl, "storm");
+        } else if (weatherId == 800) {
+            return String.format(Locale.US, formatArtUrl, "clear");
+        } else if (weatherId == 801) {
+            return String.format(Locale.US, formatArtUrl, "light_clouds");
+        } else if (weatherId >= 802 && weatherId <= 804) {
+            return String.format(Locale.US, formatArtUrl, "clouds");
+        }
+        return null;
     }
 
     public static int getIconResourceForWeatherCondition(int weatherId) {
@@ -246,6 +294,19 @@ public class Utility {
             return R.drawable.art_clouds;
         }
         return -1;
+    }
+
+    public static boolean isNetworkAvailable(Context c){
+        ConnectivityManager cm = (ConnectivityManager) c.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activateNetwork = cm.getActiveNetworkInfo();
+        return  activateNetwork != null && activateNetwork.isConnectedOrConnecting();
+    }
+
+    @SuppressWarnings("ResourceType")
+    public static @SunshineSyncAdapter.LocationStatus
+    int getLocationStatus(Context c){
+        SharedPreferences sp  = PreferenceManager.getDefaultSharedPreferences(c);
+        return sp.getInt(c.getString(R.string.pref_location_status_key), SunshineSyncAdapter.LOCATION_STATUS_UNKNOWN);
     }
 
 }

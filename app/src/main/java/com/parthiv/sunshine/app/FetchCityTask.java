@@ -43,13 +43,7 @@ public class FetchCityTask extends AsyncTask<String,Void,CityInfo[]> {
             return null;
         }
 
-        if(params[0] == "0")
-        {
-            byCityName = true;
-        }
-        else{
-            byCityName = false;
-        }
+        byCityName = params[0].equals("0");
         String locationQuery = "";
         String latitude = "";
         String longitude = "";
@@ -112,7 +106,7 @@ public class FetchCityTask extends AsyncTask<String,Void,CityInfo[]> {
             urlConnection.connect();
 
             InputStream inputStream = urlConnection.getInputStream();
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder builder = new StringBuilder();
             if(inputStream == null)
             {
                 return null;
@@ -122,20 +116,15 @@ public class FetchCityTask extends AsyncTask<String,Void,CityInfo[]> {
             String line;
             while((line = reader.readLine()) != null)
             {
-                buffer.append(line + "\n");
+                builder.append(line);
+                builder.append("\n");
             }
-            if(buffer.length() == 0)
+            if(builder.length() == 0)
             {
                 return null;
             }
-            cityJsonStr = buffer.toString();
-
-            try{
-                return getCityDataFromJson(cityJsonStr);
-            }catch (JSONException e) {
-                Log.e(LOG_TAG, e.getMessage(), e);
-                e.printStackTrace();
-            }
+            cityJsonStr = builder.toString();
+            return getCityDataFromJson(cityJsonStr);
 
         } catch (IOException e) {
             Log.e(LOG_TAG, "Error ", e);
@@ -154,10 +143,9 @@ public class FetchCityTask extends AsyncTask<String,Void,CityInfo[]> {
                 }
             }
         }
-        return null;
     }
 
-    private CityInfo[] getCityDataFromJson(String cityJsonStr) throws JSONException{
+    private CityInfo[] getCityDataFromJson(String cityJsonStr) {
 
         final String OWM_LIST = "list";
         final String OWM_CITY_ID = "id";

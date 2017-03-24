@@ -27,7 +27,7 @@ public class SettingsActivity extends PreferenceActivity {
     }
 
     @Override
-    protected boolean isValidFragment(String fragmentName) {
+        protected boolean isValidFragment(String fragmentName) {
         return PrefFragment.class.getName().equals(fragmentName);
     }
 

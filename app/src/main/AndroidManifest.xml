@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.AUTHENTICATE_ACCOUNTS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <!--
          The ACCESS_COARSE/FINE_LOCATION permissions are not required to use
@@ -36,7 +37,6 @@
         <activity
             android:name=".DetailActivity"
             android:label="@string/detail_activity"
-            android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -45,7 +45,6 @@
         <activity
             android:name=".SettingsActivity"
             android:label="@string/setting_activity"
-            android:parentActivityName=".MainActivity"
             android:theme="@style/SettingsTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -54,7 +53,6 @@
         <activity
             android:name=".LocationActivity"
             android:label="@string/location_activity"
-            android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -66,7 +64,8 @@
 
         <!-- <receiver android:name=".service.SunshineService$AlarmReciever" android:enabled="true"/> -->
 
-        <service android:name=".sync.SunshineAuthenticatorService">
+        <service android:name=".sync.SunshineAuthenticatorService"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
@@ -85,7 +84,7 @@
         <!-- The SyncAdapter service -->
         <service
             android:name=".sync.SunshineSyncService"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>

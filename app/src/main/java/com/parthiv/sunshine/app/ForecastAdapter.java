@@ -9,6 +9,8 @@ import android.content.Context;
         import android.widget.ImageView;
         import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+
 /**
  * Created by Parthiv on 10/09/2016.
  */
@@ -86,21 +88,32 @@ public class ForecastAdapter extends CursorAdapter {
 
         ViewHolder viewHolder = (ViewHolder) view.getTag();
 
+
         int viewType = getItemViewType(cursor.getPosition());
+        int fallbackIconId;
+        int weatherId = cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID);
         switch (viewType) {
             case VIEW_TYPE_TODAY: {
                 // Get weather icon
-                viewHolder.iconView.setImageResource(Utility.getArtResourceForWeatherCondition(
-                        cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID)));
+                fallbackIconId = Utility.getArtResourceForWeatherCondition(
+                                                weatherId);
                 break;
             }
             case VIEW_TYPE_FUTURE_DAY: {
                 // Get weather icon
-                viewHolder.iconView.setImageResource(Utility.getIconResourceForWeatherCondition(
-                        cursor.getInt(ForecastFragment.COL_WEATHER_CONDITION_ID)));
+                fallbackIconId = Utility.getIconResourceForWeatherCondition(weatherId);
                 break;
             }
+            default: {
+                fallbackIconId = Utility.getIconResourceForWeatherCondition(weatherId);
+            }
         }
+        Glide.with(mContext)
+                .load(Utility.getArtUrlForWeatherCondition(mContext, weatherId))
+                .error(fallbackIconId)
+                .crossFade()
+                .into(viewHolder.iconView);
+
 
         // Read date from cursor
         long dateInMillis = cursor.getLong(ForecastFragment.COL_WEATHER_DATE);

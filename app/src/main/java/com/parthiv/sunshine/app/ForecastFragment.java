@@ -1,12 +1,18 @@
 package com.parthiv.sunshine.app;
 
 
+import android.annotation.SuppressLint;
+import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.net.ConnectivityManagerCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -16,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.parthiv.sunshine.app.data.WeatherContract;
 import com.parthiv.sunshine.app.sync.SunshineSyncAdapter;
@@ -23,12 +30,13 @@ import com.parthiv.sunshine.app.sync.SunshineSyncAdapter;
 /**
  * Created by Parthiv on 14/07/2016.
  */
-public class ForecastFragment extends android.support.v4.app.Fragment implements LoaderManager.LoaderCallbacks<Cursor>{
+public class ForecastFragment extends android.support.v4.app.Fragment implements LoaderManager.LoaderCallbacks<Cursor>,SharedPreferences.OnSharedPreferenceChangeListener{
 
     private static final int FORECAST_LOADER = 0;
     private final static String LOG_TAG = ForecastFragment.class.getSimpleName();
     private ForecastAdapter mForecastAdapter;
     private ListView mListView;
+    private TextView emptyTextView;
     private int mPosition = ListView.INVALID_POSITION;
     private static final String SELECTED_KEY = "selecte_position";
     private boolean mUseTodayLayout;
@@ -64,11 +72,13 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
     static final int COL_COORD_LONG = 8;
 
     public interface Callback {
-        public void onItemSelected(Uri dataUri);
+        void onItemSelected(Uri dataUri);
     }
 
     public ForecastFragment() {
     }
+
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -76,6 +86,19 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
         setHasOptionsMenu(true);
     }
 
+    @Override
+    public void onResume() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.registerOnSharedPreferenceChangeListener(this);
+        super.onResume();
+    }
+
+    @Override
+    public void onPause() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     public void updateWeather(){
         SunshineSyncAdapter.syncImmediately(getActivity());
@@ -115,6 +138,7 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
         mForecastAdapter.setUseTodayLayout(mUseTodayLayout);
 
         mListView = (ListView)rootView.findViewById(R.id.listview_forecast);
+        emptyTextView = (TextView) rootView.findViewById(R.id.emptyTextViewForecast);
         mListView.setAdapter(mForecastAdapter);
 
 
@@ -131,6 +155,8 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
                 mPosition = i;
             }
         });
+
+        mListView.setEmptyView(emptyTextView);
 
         if(savedInstanceState != null && savedInstanceState.containsKey(SELECTED_KEY)){
             mPosition = savedInstanceState.getInt(SELECTED_KEY);
@@ -168,6 +194,7 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
         Log.d(LOG_TAG,"Loader Created.");
         Uri weatherForLocationUri = WeatherContract.WeatherEntry.buildWeatherLocationWithStartDate(locationSetting, System.currentTimeMillis());
 
+        Log.d(LOG_TAG,weatherForLocationUri.toString());
         return new CursorLoader(getContext(),
                 weatherForLocationUri,
                 FORECAST_COLUMNS,
@@ -180,7 +207,8 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mForecastAdapter.swapCursor(data);
-        Log.d(LOG_TAG,"Load Finished");
+        updateEmptyListView();
+        Log.d(LOG_TAG, DatabaseUtils.dumpCursorToString(data));
         if(mPosition != ListView.INVALID_POSITION){
             mListView.smoothScrollToPosition(mPosition);
         }
@@ -191,6 +219,35 @@ public class ForecastFragment extends android.support.v4.app.Fragment implements
         mForecastAdapter.swapCursor(null);
     }
 
+    @SuppressLint("SwitchIntDef")
+    private void updateEmptyListView(){
+        if(mForecastAdapter.getCount() == 0){
+            if(emptyTextView != null){
+                int message = R.string.empty_forecast_string;
+                @SunshineSyncAdapter.LocationStatus int location = Utility.getLocationStatus(getActivity());
+                switch (location) {
+                    case SunshineSyncAdapter.LOCATION_STATUS_SERVER_DOWN:
+                        message = R.string.empty_forecast_list_server_down;
+                        break;
+                    case SunshineSyncAdapter.LOCATION_STATUS_SERVER_INVALID:
+                        message = R.string.empty_forecast_list_server_error;
+                        break;
+                    default:
+                        if(!Utility.isNetworkAvailable(getActivity())){
+                            message =  R.string.empty_forecast_no_network_string;
+                        }
+                }
+                emptyTextView.setText(message);
+            }
+        }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if ( key.equals(getString(R.string.pref_location_status_key)) ) {
+            updateEmptyListView();;
+        }
+    }
 }
 
 

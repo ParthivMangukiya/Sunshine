@@ -1,15 +1,18 @@
 package com.parthiv.sunshine.app;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 
+import com.parthiv.sunshine.app.data.WeatherContract;
+
 /**
  * Created by Parthiv on 01/09/2016.
  */
-public class PrefFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener {
+public class PrefFragment extends PreferenceFragment implements Preference.OnPreferenceChangeListener,SharedPreferences.OnSharedPreferenceChangeListener {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -21,8 +24,24 @@ public class PrefFragment extends PreferenceFragment implements Preference.OnPre
         // updated when the preference changes.
 //        bindPreferenceSummaryToValue(findPreference(getString(R.string.pre_loc_key)));
         bindPreferenceSummaryToValue(findPreference(getString(R.string.pre_unit_key)));
+        bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_art_pack_key)));
     }
 
+    @Override
+    public void onResume() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.registerOnSharedPreferenceChangeListener(this);
+        super.onResume();
+    }
+
+
+    // Unregisters a shared preference change listener
+    @Override
+    public void onPause() {
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        sp.unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
 
     private void bindPreferenceSummaryToValue(Preference preference) {
         // Set the listener to watch for value changes.
@@ -54,5 +73,18 @@ public class PrefFragment extends PreferenceFragment implements Preference.OnPre
             preference.setSummary(stringValue);
     }
         return true;
+    }
+
+    // This gets called after the preference is changed, which is important because we
+    // start our synchronization here
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.pre_unit_key))) {
+            // units have changed. update lists of weather entries accordingly
+            getActivity().getContentResolver().notifyChange(WeatherContract.WeatherEntry.CONTENT_URI, null);
+        } else if (key.equals(getString(R.string.pref_art_pack_key))) {
+            // art pack have changed. update lists of weather entries accordingly
+            getActivity().getContentResolver().notifyChange(WeatherContract.WeatherEntry.CONTENT_URI, null);
+        }
     }
 }

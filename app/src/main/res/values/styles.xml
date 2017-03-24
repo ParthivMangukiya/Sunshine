@@ -21,7 +21,7 @@
     for two-pane layout -->
     </style>
 
-    <style name="SettingsTheme" parent="AppTheme"></style>
+    <style name="SettingsTheme" parent="AppTheme"/>
 
     <style name="AppTheme.AppBarOverlay" parent="Theme.AppCompat">
         <item name="colorPrimary">@color/colorPrimary</item>

@@ -24,7 +24,7 @@ public class CityInfoArrayAdapter extends ArrayAdapter<CityInfo> {
 
     @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
 
         CityInfo cityInfo = getItem(position);
         View rootView = convertView;

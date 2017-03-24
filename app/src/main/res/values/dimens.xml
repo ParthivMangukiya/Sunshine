@@ -5,5 +5,6 @@
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="listViewTextSize">25sp</dimen>
     <dimen name="button_size">100px</dimen>
+    <dimen name="notification_large_icon_default">48dp</dimen>
 
 </resources>

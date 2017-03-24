@@ -24,7 +24,7 @@ public class LocationFragment extends Fragment {
     private ListView listView;
 
     public interface CallBack{
-        public void onItemSelected();
+        void onItemSelected();
     }
 
 
