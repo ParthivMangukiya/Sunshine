@@ -321,7 +321,7 @@ public class LocationActivity extends AppCompatActivity implements LocationFragm
     protected void getLocation() {
         if(Build.VERSION.SDK_INT >= 23 &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Toast.makeText(this,"You don't have permisson for Access Location.",Toast.LENGTH_SHORT).show();
+            Toast.makeText(this,"You don't have permission for Access Location.",Toast.LENGTH_SHORT).show();
             return;
         }
         else {

@@ -133,6 +133,9 @@
     <string name="cd_search_location">Search Location</string>
     <string name="cd_home">Home</string>
     <string name="cd_back">Back</string>
+    <string name="fcm_weather_alert">Heads up: %1$s in %2$s!</string>
+
+
 
     <!-- Names of the art packs available -->
     <string-array name="pref_art_pack_options">
